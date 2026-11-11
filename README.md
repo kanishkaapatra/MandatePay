@@ -370,5 +370,4 @@ An AI-powered payments hackathon project exploring autonomous agents, financial 
 ---
 
 *MandatePay — Your money. Your rules. Your autonomous agent.*
-
  
