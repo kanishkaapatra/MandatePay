@@ -1,7 +1,6 @@
 <img width="1883" height="911" alt="image" src="https://github.com/user-attachments/assets/0f8d6af7-c26f-487e-8f5a-bae3c0372d30" />
 
 # MandatePay
-
 ### Autonomous payments. Human-defined boundaries.
 
 MandatePay is an AI-powered bill payment agent that processes vendor invoices, evaluates them against deterministic spending mandates, and executes authorized payments through PayPal.
