@@ -1,7 +1,5 @@
 # MandatePay
-
-### Autonomous payments. Human-defined boundaries.
-
+## Autonomous payments. Human-defined boundaries.
 **An AI-powered bill payment agent that executes financial decisions within deterministic spending mandates.**
 
 MandatePay explores a future where AI agents can autonomously handle financial operations without compromising user control.
@@ -62,7 +60,7 @@ MandatePay addresses this challenge through programmable spending mandates that 
 
 ## Core Features
 
-### 01 — Intelligent Invoice Processing
+## 01 — Intelligent Invoice Processing
 
 AI-powered invoice extraction and validation.
 
@@ -73,7 +71,7 @@ AI-powered invoice extraction and validation.
 - Detect potential duplicate invoices.
 - Never invent missing payment or vendor details.
 
-### 02 — Deterministic Spending Enforcement
+## 02 — Deterministic Spending Enforcement
 
 Financial restrictions are enforced through backend code, not AI instructions.
 
@@ -87,7 +85,7 @@ Financial restrictions are enforced through backend code, not AI instructions.
 
 The LLM cannot authorize its own restricted transactions or modify an approved mandate.
 
-### 03 — Autonomous Payment Execution
+## 03 — Autonomous Payment Execution
 
 PayPal-powered payment infrastructure.
 
@@ -98,7 +96,7 @@ PayPal-powered payment infrastructure.
 - Verified PayPal webhooks.
 - Idempotency and duplicate payout protection.
 
-### 04 — Human-in-the-Loop Approval
+## 04 — Human-in-the-Loop Approval
 
 Transactions requiring additional authorization are routed to an approval queue.
 
@@ -106,7 +104,7 @@ Users can inspect invoice information, review policy evaluation results, and app
 
 Manual approval cannot override hard spending restrictions.
 
-### 05 — Transparent Audit Trail
+## 05 — Transparent Audit Trail
 
 Every important operation is recorded, including:
 
