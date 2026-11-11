@@ -1,0 +1,13 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { evaluateInvoice } = require('../.test-build/policy.js');
+const mandate = { currency:'USD', perTransactionLimit:200, monthlyLimit:1000, approvedVendors:['Acme Cloud Services'], requireApprovedVendor:true, duplicateDetection:true, autoPayEnabled:true };
+const invoice = (overrides={}) => ({ id:'1', vendor:'Acme Cloud Services', invoiceNumber:'AC-1', amount:149, currency:'USD', description:'Hosting', status:'REVIEW', decision:'', date:new Date().toISOString(), paypalEmail:'billing@acmecloud.example', ...overrides });
+test('approved vendor under transaction limit is auto-approved',()=>assert.equal(evaluateInvoice(invoice(),mandate,[]).decision,'AUTO_APPROVED'));
+test('unapproved vendor is blocked',()=>assert.equal(evaluateInvoice(invoice({vendor:'Unknown'}),mandate,[]).decision,'BLOCKED'));
+test('transaction limit exceeded requires human approval',()=>assert.equal(evaluateInvoice(invoice({amount:450}),mandate,[]).decision,'PENDING_APPROVAL'));
+test('monthly spending limit exceeded is blocked',()=>assert.equal(evaluateInvoice(invoice({amount:200}),{...mandate,monthlyLimit:250},[invoice({id:'2',amount:100,status:'PAID'})]).decision,'BLOCKED'));
+test('duplicate vendor invoice is blocked',()=>assert.equal(evaluateInvoice(invoice(),mandate,[invoice({id:'2'})]).decision,'BLOCKED'));
+test('missing payment recipient needs correction and cannot auto-pay',()=>assert.equal(evaluateInvoice(invoice({paypalEmail:undefined}),mandate,[]).decision,'PENDING_APPROVAL'));
+test('unsupported currency is blocked',()=>assert.equal(evaluateInvoice(invoice({currency:'EUR'}),mandate,[]).decision,'BLOCKED'));
+test('in-flight payment reservation counts against monthly budget',()=>assert.equal(evaluateInvoice(invoice({amount:150}),mandate,[invoice({id:'2',amount:900,status:'PAYMENT_PENDING'})]).decision,'BLOCKED'));
