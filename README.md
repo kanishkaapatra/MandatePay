@@ -1,178 +1,137 @@
 # MandatePay
 
-### Autonomous payments. Human-defined boundaries.
+**Autonomous payments. Human-defined boundaries.**
 
-**An AI-powered bill payment agent that puts financial control at the centre of autonomous transactions.**
+MandatePay is an AI bill-payment agent that can pay vendor invoices on your behalf without ever having the authority to overspend. You describe your spending rules in plain English. AI reads the invoices. Deterministic code decides whether each one gets paid.
 
-MandatePay enables users to delegate routine vendor payments to an AI agent while retaining complete control over how their money is spent.
+> **The AI extracts. The policy engine decides. The payment executor acts. The audit log records.**
 
-Define spending mandates in natural language. Let AI process incoming invoices. Enforce financial restrictions through deterministic policy code. Execute authorized payments through PayPal.
-
-**The AI extracts. The policy engine decides. The payment executor acts. The audit log records.**
+> **Status:** Hackathon demonstration, not a production financial service. See [Current Limitations](#current-limitations).
 
 ---
 
-## The Problem
+## Why this exists
 
-AI agents are evolving from systems that simply provide recommendations into systems capable of taking real-world actions.
+AI agents are moving from recommending actions to taking them, and spending money is one of the highest-stakes actions an agent can take. The question MandatePay explores: **how do you let an agent handle payments without giving it unrestricted access to funds?**
 
-One of the most consequential actions an autonomous agent can take is spending money.
+The answer here is to keep authorization out of the model entirely. The AI never approves a payment. It only produces structured data, and plain backend code checks that data against rules you defined. A model's output cannot talk its way past a hard limit.
 
-But how do we allow AI agents to manage financial operations without giving them unrestricted access to funds?
+## How it works
 
-MandatePay explores this problem through programmable spending mandates, deterministic authorization, and auditable payment execution.
+```
+Mandate  →  Invoice  →  AI extraction  →  Policy engine  →  Decision  →  PayPal  →  Audit log
+```
 
-## How It Works
+1. **Define a mandate.** Describe limits, budgets and approved vendors in natural language.
+2. **Submit an invoice.** Upload a text-based PDF.
+3. **Extract.** The AI pulls out vendor, amount, invoice number and payment details, validated with Zod.
+4. **Evaluate.** A deterministic policy engine checks the invoice against your mandate.
+5. **Decide.** The invoice is auto-approved, blocked, or sent to a human for review.
+6. **Execute and record.** Approved payments go out via PayPal Payouts, and every step is logged.
 
-1. **Define a spending mandate:** Set transaction limits, monthly budgets, and approved vendors using natural language.
-2. **Receive an invoice:** Upload a vendor invoice for processing.
-3. **Extract information:** AI identifies invoice details and structures the extracted data.
-4. **Evaluate the mandate:** A deterministic policy engine checks the transaction against financial restrictions.
-5. **Determine the outcome:** The invoice is automatically approved, blocked, or sent for human review.
-6. **Execute and record:** Authorized payments are processed through PayPal and recorded in the audit trail.
+## Demo
 
----
+The app ships with three seeded invoices and this mandate:
 
-## Core Features
+> *"Automatically pay invoices under $200, only to approved vendors, with a maximum monthly spending limit of $1,000. Require manual approval for anything outside these conditions."*
 
-### 01. Intelligent Invoice Processing
+| Invoice | Vendor | Amount | Outcome | Why |
+|---|---|---:|---|---|
+| AC-1024 | Acme Cloud Services | $149 | ✅ Auto-approved | Approved vendor, under the auto-pay threshold |
+| US-2026-01 | Unknown Solutions | $175 | ⛔ Blocked | Vendor is not approved |
+| AC-1025 | Acme Cloud Services | $450 | ⏳ Pending approval | Exceeds the auto-pay threshold |
 
-AI-powered invoice extraction and validation.
-
-- Upload text-based PDF invoices.
-- Extract vendor, amount, invoice number, and payment details.
-- Validate structured outputs using Zod.
-- Identify missing or ambiguous information.
-- Detect potential duplicate invoices.
-- Never invent missing vendor or payment information.
-
-### 02. Deterministic Spending Enforcement
-
-Financial authorization is enforced by backend code, not by AI instructions.
-
-- Natural-language spending mandate interpretation.
-- Per-transaction spending limits.
-- Monthly spending budgets.
-- Approved vendor restrictions.
-- Manual approval thresholds.
-- Duplicate invoice prevention.
-- Reserved in-flight spending calculations.
-
-The AI cannot bypass hard financial restrictions through its generated output.
-
-### 03. Autonomous Payment Execution
-
-PayPal-powered payment infrastructure.
-
-- PayPal Payouts API integration.
-- OAuth 2.0 authentication.
-- Unique payout batch and request identifiers.
-- Payment status tracking.
-- Verified PayPal webhooks.
-- Duplicate payout protection.
-
-### 04. Human-in-the-Loop Approval
-
-Transactions requiring additional authorization are routed to an approval queue.
-
-- Review invoice information.
-- Inspect policy evaluation results.
-- Approve or reject eligible transactions.
-- Prevent manual approvals from overriding hard policy restrictions.
-
-### 05. Transparent Audit Trail
-
-Every important operation is recorded, including:
-
-- Invoice submissions.
-- AI extraction results.
-- Policy evaluations.
-- Approval decisions.
-- Payment attempts.
-- PayPal responses.
-- Webhook events.
-- Payment outcomes.
+Manual approval can release the $450 invoice, but it can never override a hard restriction like the unapproved vendor.
 
 ---
 
-## Demo Scenario
+## Features
 
-The application includes three seeded invoices demonstrating different spending decisions.
+### Invoice processing
+- Upload text-based PDF invoices
+- Extract vendor, amount, invoice number and payment details
+- Validate all extracted data against Zod schemas
+- Flag missing or ambiguous fields rather than guessing
+- Detect likely duplicate invoices
+- Never invent missing vendor or payment information
 
-**Example spending mandate:**
+### Deterministic spending enforcement
+- Natural-language mandate interpretation
+- Per-transaction limits
+- Monthly budgets, including reserved in-flight spend
+- Approved-vendor lists
+- Manual-approval thresholds
+- Duplicate invoice prevention
 
-"Automatically pay invoices under $200, only to approved vendors, with a maximum monthly spending limit of $1,000. Require manual approval for anything outside these conditions."
+### Payment execution
+- PayPal Payouts API with OAuth 2.0
+- Unique payout batch and request IDs
+- Payment status tracking
+- Verified PayPal webhooks
+- Duplicate payout protection
 
-| Invoice | Vendor | Amount | Outcome |
-|---|---|---:|---|
-| AC-1024 | Acme Cloud Services | $149 | Auto-approved |
-| US-2026-01 | Unknown Solutions | $175 | Blocked |
-| AC-1025 | Acme Cloud Services | $450 | Pending approval |
+### Human-in-the-loop approval
+- Review invoice details and the full policy evaluation
+- Approve or reject eligible transactions
+- Approvals re-run the policy check and cannot override hard restrictions
 
-**Three decisions. Three different outcomes. One enforceable spending mandate.**
-
-- $149: Approved vendor and within the automatic payment threshold.
-- $175: Blocked because the vendor is not approved.
-- $450: Requires human approval because it exceeds the automatic transaction threshold.
-
-Manual approval cannot override hard policy restrictions.
+### Audit trail
+Every significant event is recorded: invoice submissions, AI extraction results, policy evaluations, approval decisions, payment attempts, PayPal responses, webhook events and final outcomes.
 
 ---
 
-## Application
+## Architecture
 
-| Route | Description |
+| Component | Responsibility | Trusted to authorize payments? |
+|---|---|:---:|
+| AI agent | Invoice extraction, mandate interpretation | No |
+| Policy engine | Deterministic financial authorization | Yes |
+| Payment executor | Executes authorized payments only | Yes |
+| Audit logger | Traceable, read-only event recording | n/a |
+
+**Safeguards**
+- Server-side credential handling
+- Structured input validation
+- Payment idempotency and duplicate prevention
+- PayPal webhook signature verification
+- Explicit payment state transitions
+- Approval authorization checks
+
+Unknown payout outcomes must be reconciled with PayPal before any new payout attempt.
+
+## Tech stack
+
+| Layer | Technology |
 |---|---|
-| `/` | Cinematic public landing page |
-| `/dashboard` | Interactive financial command center |
-
----
-
-## Technology Stack
-
-| Layer | Technologies |
-|---|---|
-| Frontend | Next.js, React, TypeScript |
-| Styling | Tailwind CSS |
-| Backend | Next.js API Routes, Node.js |
+| Frontend | Next.js, React, TypeScript, Tailwind CSS |
+| Backend | Next.js API routes, Node.js |
 | Validation | Zod |
 | Database | PostgreSQL, Prisma ORM |
 | AI | Configurable LLM API |
 | Payments | PayPal Payouts API |
 | Testing | Automated policy engine tests |
 
+## Routes
+
+| Route | Description |
+|---|---|
+| `/` | Public landing page |
+| `/dashboard` | Interactive command center |
+
 ---
 
-## Getting Started
+## Getting started
 
-### Prerequisites
-
-- Node.js 20 or later
-- npm
-- Git
-
-### 1. Clone the repository
+**Prerequisites:** Node.js 20+, npm, Git
 
 ```bash
 git clone https://github.com/kanishkaapatra/MandatePay.git
 cd MandatePay
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
-```
-
-### 3. Configure environment variables
-
-Copy the example environment file:
-
-```bash
 cp .env.example .env
 ```
 
-Configure the required variables:
+Fill in `.env`:
 
 ```env
 DATABASE_URL=
@@ -188,206 +147,82 @@ PAYPAL_WEBHOOK_ID=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-Keep all credentials server-side. Never commit your `.env` file.
-
-### 4. Start the development server
+Keep all credentials server-side and never commit `.env`.
 
 ```bash
 npm run dev
 ```
 
-Open the application:
+Then open [http://localhost:3000](http://localhost:3000) or go straight to [/dashboard](http://localhost:3000/dashboard).
 
-- Landing page: http://localhost:3000
-- Dashboard: http://localhost:3000/dashboard
+## Execution modes
 
----
+| | Demo mode (default) | PayPal Sandbox mode |
+|---|---|---|
+| Setting | `DEMO_MODE=true` | `DEMO_MODE=false` |
+| Invoices | Seeded fixtures | Real submissions |
+| Storage | In-memory demo store | In-memory demo store |
+| Payments | Simulated | Sandbox payout requests |
+| Needs PayPal credentials | No | Yes |
 
-## Payment Configuration
+Sandbox transactions do not move real money. Payouts may need to be enabled on your PayPal sandbox business account.
 
-MandatePay supports two execution modes.
-
-### Demo Mode
-
-The default configuration is:
-
-```env
-DEMO_MODE=true
-```
-
-Demo mode:
-
-- Uses seeded invoice fixtures.
-- Uses an in-memory demo store.
-- Simulates payment execution.
-- Does not send money.
-
-### PayPal Sandbox Mode
-
-Set:
-
-```env
-DEMO_MODE=false
-```
-
-Configure valid PayPal Sandbox credentials to enable actual sandbox payout requests.
-
-The integration supports:
-
-- OAuth 2.0 authentication.
-- Payout creation.
-- Payment status tracking.
-- Webhook verification.
-- Duplicate payout protection.
-
-PayPal Payouts may need to be enabled on your sandbox business account.
-
-**Sandbox transactions do not transfer real money.**
-
----
-
-## Database Setup
-
-Configure `DATABASE_URL` with your PostgreSQL connection string.
-
-Generate the Prisma client:
+## Database setup
 
 ```bash
-npm run db:generate
+npm run db:generate                 # generate the Prisma client
+npm run db:migrate -- --name init   # run migrations
+npm run db:seed                     # seed data
 ```
 
-Run migrations:
+The Prisma schema covers users, spending mandates, vendors, invoices, policy evaluations, payments, payment attempts, approvals, audit events and verified webhook receipts.
 
-```bash
-npm run db:migrate -- --name init
-```
+> **Note:** The bundled UI currently runs on an in-memory store. The Prisma schema, migrations and seed data are provided for database integration, but the in-memory store is not suitable for multi-user or production use.
 
-Seed the database:
-
-```bash
-npm run db:seed
-```
-
-The Prisma schema includes relational models and constraints for:
-
-- Users
-- Spending mandates
-- Vendors
-- Invoices
-- Policy evaluations
-- Payments
-- Payment attempts
-- Approvals
-- Audit events
-- Verified webhook receipts
-
-**Implementation note:** The bundled demo UI currently uses an in-memory store. Prisma schema, migrations, and seed data are provided for database integration. The in-memory store is not suitable for multi-user or production deployments.
-
----
-
-## API Reference
+## API reference
 
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/api/mandates` | Interpret and create spending mandates |
-| POST | `/api/invoices` | Validate invoices and evaluate policies |
-| POST | `/api/invoices/upload` | Upload and extract invoice data |
-| POST | `/api/invoices/[id]/approval` | Process approval decisions |
+| POST | `/api/invoices` | Validate an invoice and evaluate policy |
+| POST | `/api/invoices/upload` | Upload a PDF and extract invoice data |
+| POST | `/api/invoices/[id]/approval` | Submit an approval decision |
 | GET | `/api/payments/[invoiceId]/status` | Check payout status |
-| POST | `/api/webhooks/paypal` | Process verified PayPal webhooks |
-| GET | `/api/audit` | Retrieve audit events |
+| POST | `/api/webhooks/paypal` | Receive verified PayPal webhooks |
+| GET | `/api/audit` | Retrieve audit events (read-only) |
 
-### Important Implementation Details
-
-- Mandate activation requires explicit `activate: true` confirmation.
-- Invoice submissions are validated before policy evaluation.
-- PDF extraction currently supports text-based PDFs.
-- Missing vendor or invoice identifiers are not invented.
-- Approval processing re-evaluates the policy before payment execution.
-- PayPal webhook authenticity is verified before processing events.
-- Audit events are read-only through the API.
-
----
-
-## Security and Trust
-
-MandatePay separates intelligence, authorization, and execution.
-
-| Component | Responsibility |
-|---|---|
-| AI Agent | Invoice extraction and mandate interpretation |
-| Policy Engine | Deterministic financial authorization |
-| Payment Executor | Authorized payment execution |
-| Audit Logger | Traceable event recording |
-
-Additional safeguards include:
-
-- Server-side credential management.
-- Structured input validation.
-- Duplicate invoice prevention.
-- Payment idempotency.
-- PayPal webhook verification.
-- Explicit payment state transitions.
-- Spending-limit enforcement.
-- Approval authorization checks.
-
-Unknown payout outcomes must be reconciled with PayPal before another payout attempt.
-
----
+**Behavior to know about**
+- Activating a mandate requires an explicit `activate: true`.
+- Invoices are validated before policy evaluation.
+- Approval re-evaluates policy before any payment is executed.
+- Webhook authenticity is verified before an event is processed.
+- Missing vendor or invoice identifiers are never invented.
+- PDF extraction supports text-based PDFs only.
 
 ## Testing
 
-Run the automated policy engine tests:
-
 ```bash
-npm test
+npm test          # policy engine tests
+npm run build     # production build
 ```
 
-Test coverage includes:
-
-- Compliant approved vendors.
-- Unapproved vendors.
-- Transaction thresholds.
-- Monthly spending limits.
-- Duplicate invoices.
-- Unsupported currencies.
-- Reserved in-flight spending.
-
-Build the application:
-
-```bash
-npm run build
-```
+The policy tests cover approved vendors, unapproved vendors, transaction thresholds, monthly limits, duplicate invoices, unsupported currencies and reserved in-flight spending.
 
 ---
 
-## Current Limitations
+## Current limitations
 
-MandatePay is currently a hackathon demonstration, not a production-ready financial service.
+- Single seeded admin; no production multi-user authentication
+- Demo data and audit events live in memory
+- The bundled UI does not yet use the Prisma database
+- No OCR, so scanned PDFs and images are unsupported
+- AI extraction requires an `AI_API_KEY`
+- A production deployment would need authenticated sessions, database-backed transactions with locking, and persistent audit storage
 
-- The demo uses a single seeded admin rather than production multi-user authentication.
-- Demo data and audit events are stored in memory.
-- The bundled UI does not yet use the Prisma database for persistent storage.
-- Invoice upload supports text-based PDFs.
-- OCR for scanned PDFs and images is not included.
-- AI extraction requires an `AI_API_KEY`.
-- Production deployment requires authenticated sessions, database-backed transactions and locking, and persistent audit storage.
-
----
-
-## Project Philosophy
+## Philosophy
 
 **Autonomy should not mean unrestricted authority.**
 
-MandatePay explores how AI agents can execute financial operations while remaining accountable to explicit, deterministic, and auditable user-defined permissions.
-
-The objective is not simply to make AI capable of spending money.
-
-It is to make autonomous spending controlled, transparent, and accountable.
-
----
-
-**MandatePay**
+The goal isn't just to make AI capable of spending money. It's to make autonomous spending controlled, transparent and accountable to rules a human wrote.
 
 *Your money. Your rules. Your autonomous agent.*
- 
